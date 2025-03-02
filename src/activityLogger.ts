@@ -102,7 +102,7 @@ export async function logHeartbeat(
   const cursorpos =
     vscode.window.activeTextEditor?.selection.active.character ?? 0;
 
-  let previousLines = lastLineCounts.get(entity) || 0;
+  let previousLines = lastLineCounts.get(entity) || document.lineCount;
   let newLines = document.lineCount;
   let linesEdited = Math.abs(newLines - previousLines);
 
