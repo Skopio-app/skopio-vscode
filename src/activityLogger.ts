@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { DateTime } from "luxon";
 import { runCliCommand } from "./cli";
+import { Logger } from "./logger";
 
 const EVENT_INTERVAL = 60 * 1000;
 let activeEvents: Map<
@@ -52,8 +53,8 @@ export async function logActivity(
   }
 
   lastActivityTimestamp = now;
-  console.log(
-    `[Activity] Updated event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${projectPath} | Duration: ${
+  Logger.info(
+    `Updated event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${projectPath} | Duration: ${
       activeEvents.get(entity)?.duration
     }s`
   );
@@ -84,8 +85,8 @@ async function logSummarizedEvent(entity: string): Promise<void> {
     "--end-timestamp", endTimestamp,
   ]);
 
-  console.log(
-    `[Event] Logged summarized event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${project} | Duration: ${duration}s`
+  Logger.info(
+    `Logged summarized event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${project} | Duration: ${duration}s`
   );
 
   activeEvents.delete(entity);
@@ -110,8 +111,8 @@ export async function logHeartbeat(
 
   lastLineCounts.set(entity, newLines);
 
-  console.log(
-    `[Heartbeat] Logging ${
+  Logger.info(
+    `Logging ${
       isWrite ? "write" : "edit"
     } heartbeat for: ${entity} | Lines edited: ${linesEdited}`
   );

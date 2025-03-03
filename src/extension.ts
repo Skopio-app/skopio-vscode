@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { initializeDatabase, runCliCommand } from "./cli";
 import { registerEventListeners } from "./eventListener";
 import { startAutoSync } from "./syncManager";
+import { Logger } from "./logger";
 
 export async function activate(context: vscode.ExtensionContext) {
   await initializeDatabase(context);
@@ -16,9 +17,9 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(syncCommand);
-  console.log("Timestack extension activated.");
+  Logger.debug("Timestack extension activated.");
 }
 
 export function deactivate() {
-  console.log("Timestack extension deactivated");
+  Logger.info("Timestack extension deactivated");
 }
