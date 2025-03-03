@@ -3,7 +3,7 @@ import { SYNC_INTERVAL } from "./config";
 import { Logger } from "./logger";
 
 let retryAttempts = 0;
-const MAX_RETRIES = 0;
+const MAX_RETRIES = 4;
 let syncInterval: NodeJS.Timeout | null = null;
 
 export function startAutoSync(context: any): void {
