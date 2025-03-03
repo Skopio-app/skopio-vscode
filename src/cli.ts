@@ -1,48 +1,30 @@
 // eslint-disable-next-line @typescript-eslint/naming-convention
 import * as child_process from "child_process";
-import { promisify } from "util";
 import * as vscode from "vscode";
 import { CLI_COMMAND, getDatabasePath } from "./config";
 import { Logger } from "./logger";
 
-const exec = promisify(child_process.exec);
-
 export async function runCliCommand(args: any[]): Promise<void> {
-  const process = child_process.spawn(CLI_COMMAND, args, {
-    shell: true,
-    stdio: "pipe",
+  return new Promise((resolve, reject) => {
+    child_process.execFile(
+      CLI_COMMAND,
+      args,
+      (error: Error | null, stdout: string, stderr: string) => {
+        if (error) {
+          Logger.error(`CLI execution error: ${error.message}`);
+          reject(error);
+          return;
+        }
+        if (stderr) {
+          Logger.warn(`CLI stderr: ${stderr.trim()}`);
+        }
+        if (stdout) {
+          Logger.info(`CLI output: ${stdout.trim()}`);
+        }
+        resolve();
+      }
+    );
   });
-
-  process.stdout.on("data", (data) => {
-    Logger.info(`CLI Output: ${data.toString().trim()}`);
-  });
-
-  process.stderr.on("data", (data) => {
-    Logger.error(`CLI Error: ${data.toString().trim()}`);
-  });
-
-  process.on("close", (code) => {
-    Logger.info(`CLI Process exited with code ${code}`);
-  });
-
-  process.on("error", (error) => {
-    Logger.error(`CLI Failed to execute: ${error.message}`);
-  });
-  // try {
-  //   const { stdout, stderr } = await exec(
-  //     `"${CLI_COMMAND}" ${args.map((arg) => `"${arg}"`).join(" ")}`
-  //   );
-
-  //   if (stdout) {
-  //     console.log(`[CLI Output]: ${stdout.trim()}`);
-  //   }
-
-  //   if (stderr) {
-  //     console.error(`CLI Error: ${stderr}`);
-  //   }
-  // } catch (error) {
-  //   console.error(`Failed to execute CLI: ${error}`);
-  // }
 }
 
 export async function initializeDatabase(
@@ -50,5 +32,10 @@ export async function initializeDatabase(
 ): Promise<void> {
   const dbPath = getDatabasePath(context);
   Logger.info(`Initializing database at ${dbPath}`);
-  await runCliCommand(["--db", dbPath]);
+
+  try {
+    await runCliCommand(["--db", dbPath]);
+  } catch (error) {
+    Logger.error(`Failed to initialize database: ${error}`);
+  }
 }
