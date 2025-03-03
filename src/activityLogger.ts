@@ -13,8 +13,8 @@ let activeEvents: Map<
     project: string;
   }
 > = new Map();
-
 let lastLineCounts: Map<string, number> = new Map();
+let lastActivityTimestamp: number = DateTime.now().toSeconds();
 
 export async function logActivity(
   activityType: string,
@@ -30,13 +30,13 @@ export async function logActivity(
     let event = activeEvents.get(entity);
 
     if (event?.activityType === activityType) {
-      event.duration += 5;
+      event.duration += now - lastActivityTimestamp;
     } else {
       await logSummarizedEvent(entity);
       activeEvents.set(entity, {
         timestamp: now,
         activityType,
-        duration: 5,
+        duration: 0,
         language,
         project: projectPath,
       });
@@ -45,12 +45,13 @@ export async function logActivity(
     activeEvents.set(entity, {
       timestamp: now,
       activityType,
-      duration: 5,
+      duration: 0,
       language,
       project: projectPath,
     });
   }
 
+  lastActivityTimestamp = now;
   console.log(
     `[Activity] Updated event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${projectPath} | Duration: ${
       activeEvents.get(entity)?.duration
@@ -101,17 +102,13 @@ export async function logHeartbeat(
   const app = "vscode";
   const cursorpos =
     vscode.window.activeTextEditor?.selection.active.character ?? 0;
+    const timestamp = Math.floor(DateTime.now().toSeconds());
 
   let previousLines = lastLineCounts.get(entity) || document.lineCount;
   let newLines = document.lineCount;
   let linesEdited = Math.abs(newLines - previousLines);
 
-//   if (linesEdited === 0) {
-//     return;
-//   }
-
   lastLineCounts.set(entity, newLines);
-  const timestamp = Math.floor(DateTime.now().toSeconds());
 
   console.log(
     `[Heartbeat] Logging ${
