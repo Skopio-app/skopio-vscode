@@ -22,13 +22,13 @@ export async function runCliCommand(args: any[]): Promise<void> {
           Logger.info(`CLI output: ${stdout.trim()}`);
         }
         resolve();
-      }
+      },
     );
   });
 }
 
 export async function initializeDatabase(
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ): Promise<void> {
   const dbPath = getDatabasePath(context);
   Logger.info(`Initializing database at ${dbPath}`);

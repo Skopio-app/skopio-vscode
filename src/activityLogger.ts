@@ -19,7 +19,7 @@ let lastActivityTimestamp: number = DateTime.now().toSeconds();
 
 export async function logActivity(
   activityType: string,
-  document: vscode.TextDocument
+  document: vscode.TextDocument,
 ): Promise<void> {
   const projectPath =
     vscode.workspace.getWorkspaceFolder(document.uri)?.uri.fsPath || "unknown";
@@ -56,7 +56,7 @@ export async function logActivity(
   Logger.info(
     `Updated event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${projectPath} | Duration: ${
       activeEvents.get(entity)?.duration
-    }s`
+    }s`,
   );
 
   // Immediately log a heartbeat when an event occurs.
@@ -74,19 +74,28 @@ async function logSummarizedEvent(entity: string): Promise<void> {
 
   await runCliCommand([
     "event",
-    "--timestamp", timestamp,
-    "--activity-type", activityType,
-    "--app", "vscode",
-    "--entity", entity,
-    "--entity-type", "file",
-    "--duration", duration.toFixed(),
-    "--project", project,
-    "--language", language,
-    "--end-timestamp", endTimestamp,
+    "--timestamp",
+    timestamp,
+    "--activity-type",
+    activityType,
+    "--app",
+    "vscode",
+    "--entity",
+    entity,
+    "--entity-type",
+    "file",
+    "--duration",
+    duration.toFixed(),
+    "--project",
+    project,
+    "--language",
+    language,
+    "--end-timestamp",
+    endTimestamp,
   ]);
 
   Logger.info(
-    `Logged summarized event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${project} | Duration: ${duration}s`
+    `Logged summarized event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${project} | Duration: ${duration}s`,
   );
 
   activeEvents.delete(entity);
@@ -94,7 +103,7 @@ async function logSummarizedEvent(entity: string): Promise<void> {
 
 export async function logHeartbeat(
   document: vscode.TextDocument,
-  isWrite: boolean
+  isWrite: boolean,
 ): Promise<void> {
   const projectPath =
     vscode.workspace.getWorkspaceFolder(document.uri)?.uri.fsPath || "unknown";
@@ -103,7 +112,7 @@ export async function logHeartbeat(
   const app = "vscode";
   const cursorpos =
     vscode.window.activeTextEditor?.selection.active.character ?? 0;
-    const timestamp = Math.floor(DateTime.now().toSeconds());
+  const timestamp = Math.floor(DateTime.now().toSeconds());
 
   let previousLines = lastLineCounts.get(entity) || document.lineCount;
   let newLines = document.lineCount;
@@ -114,19 +123,27 @@ export async function logHeartbeat(
   Logger.info(
     `Logging ${
       isWrite ? "write" : "edit"
-    } heartbeat for: ${entity} | Lines edited: ${linesEdited}`
+    } heartbeat for: ${entity} | Lines edited: ${linesEdited}`,
   );
 
   let args = [
     "heartbeat",
-    "--project", projectPath,
-    "--timestamp", timestamp,
-    "--entity", entity,
-    "--entity-type", "file",
-    "--language", language,
-    "--app", app,
-    "--lines", linesEdited.toString(),
-    "--cursorpos", cursorpos.toString(),
+    "--project",
+    projectPath,
+    "--timestamp",
+    timestamp,
+    "--entity",
+    entity,
+    "--entity-type",
+    "file",
+    "--language",
+    language,
+    "--app",
+    app,
+    "--lines",
+    linesEdited.toString(),
+    "--cursorpos",
+    cursorpos.toString(),
   ];
 
   if (isWrite) {
