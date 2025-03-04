@@ -13,7 +13,7 @@ export async function activate(context: vscode.ExtensionContext) {
     "timestack.sync",
     async () => {
       await runCliCommand(["sync"]);
-    }
+    },
   );
 
   context.subscriptions.push(syncCommand);

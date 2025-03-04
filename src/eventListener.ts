@@ -77,7 +77,7 @@ export function registerEventListeners(context: vscode.ExtensionContext): void {
       ) {
         await logActivity("writing_docs", document);
       }
-    })
+    }),
   );
 
   // Register all disposables for proper cleanup
