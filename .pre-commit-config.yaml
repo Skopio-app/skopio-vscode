@@ -1,0 +1,18 @@
+repos:
+  # Typescript format
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Prettier Formatter
+        entry: npx prettier --write
+        language: node
+        types_or: [javascript, jsx, tsx, ts, css, json, markdown, yaml, html]
+
+  # Typescript linting
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: npx eslint .
+        language: node
+        types_or: [javascript, jsx, tsx, ts]
