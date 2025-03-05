@@ -6,7 +6,7 @@ import * as fs from "fs";
 const HOME_DIR = os.homedir();
 export const CLI_COMMAND = path.join(
   HOME_DIR,
-  "CodeProjects/timestack/target/debug/cli",
+  "CodeProjects/skopio/target/debug/cli",
 );
 export const SYNC_INTERVAL = 60000;
 
@@ -17,5 +17,5 @@ export function getDatabasePath(context: vscode.ExtensionContext): string {
     fs.mkdirSync(storagePath, { recursive: true });
   }
 
-  return path.join(storagePath, "timestack-cli-data.db");
+  return path.join(storagePath, "skopio-cli-data.db");
 }

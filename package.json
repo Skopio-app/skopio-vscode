@@ -1,6 +1,6 @@
 {
-  "name": "timestack-vscode",
-  "displayName": "Timestack",
+  "name": "skopio-vscode",
+  "displayName": "Skopio",
   "description": "Visual Studio Plugin for tracking programming activity",
   "version": "0.0.1",
   "engines": {
@@ -11,7 +11,7 @@
   ],
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:timestack.sync",
+    "onCommand:skopio.sync",
     "workspaceContains:**/*"
   ],
   "main": "./dist/extension.js",
