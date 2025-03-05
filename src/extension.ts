@@ -9,17 +9,14 @@ export async function activate(context: vscode.ExtensionContext) {
   registerEventListeners(context);
   startAutoSync(context);
 
-  let syncCommand = vscode.commands.registerCommand(
-    "timestack.sync",
-    async () => {
-      await runCliCommand(["sync"]);
-    },
-  );
+  let syncCommand = vscode.commands.registerCommand("skopio.sync", async () => {
+    await runCliCommand(["sync"]);
+  });
 
   context.subscriptions.push(syncCommand);
-  Logger.debug("Timestack extension activated.");
+  Logger.debug("Skopio extension activated.");
 }
 
 export function deactivate() {
-  Logger.info("Timestack extension deactivated");
+  Logger.info("Skopio extension deactivated");
 }

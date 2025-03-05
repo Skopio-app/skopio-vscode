@@ -1,6 +1,6 @@
-# timestack-vscode README
+# skopio-vscode README
 
-This is the README for your extension "timestack-vscode". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension "skopio-vscode". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 
