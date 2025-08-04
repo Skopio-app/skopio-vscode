@@ -9,11 +9,11 @@ export async function activate(context: vscode.ExtensionContext) {
   registerEventListeners(context);
   startAutoSync(context);
 
-  let syncCommand = vscode.commands.registerCommand("skopio.sync", async () => {
-    await runCliCommand(["sync"]);
-  });
+  // let syncCommand = vscode.commands.registerCommand("skopio.sync", async () => {
+  //   await runCliCommand(["sync"]);
+  // });
 
-  context.subscriptions.push(syncCommand);
+  // context.subscriptions.push([]);
   Logger.debug("Skopio extension activated.");
 }
 

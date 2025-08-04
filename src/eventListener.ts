@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { logActivity, logHeartbeat } from "./activityLogger";
+import { Category, MIN_HEARTBEAT_INTERVAL } from "./config";
 
 let lastHeartbeat = 0;
-const MIN_HEARTBEAT_INTERVAL = 2 * 1000;
 
 export function registerEventListeners(context: vscode.ExtensionContext): void {
   const disposables: vscode.Disposable[] = [];
@@ -30,21 +30,21 @@ export function registerEventListeners(context: vscode.ExtensionContext): void {
 
     vscode.window.onDidChangeActiveTextEditor(async (editor) => {
       if (editor && editor.document) {
-        await logActivity("focus", editor.document);
+        await logActivity(Category.Coding, editor.document);
       }
     }),
 
     vscode.debug.onDidStartDebugSession(async () => {
       const editor = vscode.window.activeTextEditor;
       if (editor) {
-        await logActivity("debugging", editor.document);
+        await logActivity(Category.Debugging, editor.document);
       }
     }),
 
     vscode.debug.onDidTerminateDebugSession(async () => {
       const editor = vscode.window.activeTextEditor;
       if (editor) {
-        await logActivity("debugging_end", editor.document);
+        await logActivity(Category.Debugging, editor.document);
       }
     }),
 
@@ -52,9 +52,9 @@ export function registerEventListeners(context: vscode.ExtensionContext): void {
       const editor = vscode.window.activeTextEditor;
       if (editor) {
         if (event.execution.task.name.toLowerCase().includes("build")) {
-          await logActivity("compiling", editor.document);
+          await logActivity(Category.Compiling, editor.document);
         } else if (event.execution.task.name.toLowerCase().includes("test")) {
-          await logActivity("testing", editor.document);
+          await logActivity(Category.Testing, editor.document);
         }
       }
     }),
@@ -63,9 +63,9 @@ export function registerEventListeners(context: vscode.ExtensionContext): void {
       const editor = vscode.window.activeTextEditor;
       if (editor) {
         if (event.execution.task.name.toLowerCase().includes("build")) {
-          await logActivity("compiling_end", editor.document);
+          await logActivity(Category.Compiling, editor.document);
         } else if (event.execution.task.name.toLowerCase().includes("test")) {
-          await logActivity("testing_end", editor.document);
+          await logActivity(Category.Testing, editor.document);
         }
       }
     }),
@@ -75,7 +75,7 @@ export function registerEventListeners(context: vscode.ExtensionContext): void {
         document.languageId === "markdown" ||
         document.languageId === "plaintext"
       ) {
-        await logActivity("writing_docs", document);
+        await logActivity(Category.WritingDocs, document);
       }
     }),
   );

@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { DateTime } from "luxon";
 import { runCliCommand } from "./cli";
 import { Logger } from "./logger";
+import { APP_NAME, EntityType } from "./config";
 
 const EVENT_INTERVAL = 60 * 1000;
 let activeEvents: Map<
@@ -68,34 +69,34 @@ async function logSummarizedEvent(entity: string): Promise<void> {
     return;
   }
 
-  let { timestamp, activityType, duration, language, project } =
+  let { timestamp, activityType, duration, project } =
     activeEvents.get(entity)!;
   const endTimestamp = Math.floor(DateTime.now().toSeconds());
 
   await runCliCommand([
-    "event",
-    "--timestamp",
-    timestamp,
-    "--activity-type",
-    activityType,
     "--app",
-    "vscode",
-    "--entity",
+    APP_NAME,
+    "event",
+    "-t",
+    timestamp,
+    "-c",
+    activityType,
+    "-a",
+    APP_NAME,
+    "-e",
     entity,
     "--entity-type",
-    "file",
-    "--duration",
+    EntityType.File,
+    "-d",
     duration.toFixed(),
-    "--project",
+    "-p",
     project,
-    "--language",
-    language,
     "--end-timestamp",
     endTimestamp,
   ]);
 
   Logger.info(
-    `Logged summarized event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${project} | Duration: ${duration}s`,
+    `Logged summarized event: ${activityType} | File: ${entity} | Project: ${project} | Duration: ${duration}s`,
   );
 
   activeEvents.delete(entity);
@@ -108,8 +109,6 @@ export async function logHeartbeat(
   const projectPath =
     vscode.workspace.getWorkspaceFolder(document.uri)?.uri.fsPath || "unknown";
   const entity = document.fileName;
-  const language = document.languageId;
-  const app = "vscode";
   const cursorpos =
     vscode.window.activeTextEditor?.selection.active.character ?? 0;
   const timestamp = Math.floor(DateTime.now().toSeconds());
@@ -127,27 +126,27 @@ export async function logHeartbeat(
   );
 
   let args = [
+    "--app",
+    APP_NAME,
     "heartbeat",
-    "--project",
+    "-p",
     projectPath,
-    "--timestamp",
+    "-t",
     timestamp,
-    "--entity",
+    "-e",
     entity,
     "--entity-type",
-    "file",
-    "--language",
-    language,
-    "--app",
-    app,
-    "--lines",
+    EntityType.File,
+    "-a",
+    APP_NAME,
+    "-l",
     linesEdited.toString(),
-    "--cursorpos",
+    "-c",
     cursorpos.toString(),
   ];
 
   if (isWrite) {
-    args.push("--is-write");
+    args.push("-i");
   }
 
   await runCliCommand(args);
