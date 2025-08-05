@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
 import { DateTime } from "luxon";
 import { runCliCommand } from "./cli";
 import { Logger } from "./logger";
@@ -9,9 +10,8 @@ let activeEvents: Map<
   string,
   {
     timestamp: number;
-    activityType: string;
+    category: string;
     duration: number;
-    language: string;
     project: string;
   }
 > = new Map();
@@ -19,7 +19,7 @@ let lastLineCounts: Map<string, number> = new Map();
 let lastActivityTimestamp: number = DateTime.now().toSeconds();
 
 export async function logActivity(
-  activityType: string,
+  category: string,
   document: vscode.TextDocument,
 ): Promise<void> {
   const projectPath =
@@ -31,31 +31,29 @@ export async function logActivity(
   if (activeEvents.has(entity)) {
     let event = activeEvents.get(entity);
 
-    if (event?.activityType === activityType) {
+    if (event?.category === category) {
       event.duration += now - lastActivityTimestamp;
     } else {
       await logSummarizedEvent(entity);
       activeEvents.set(entity, {
         timestamp: now,
-        activityType,
+        category,
         duration: 0,
-        language,
         project: projectPath,
       });
     }
   } else {
     activeEvents.set(entity, {
       timestamp: now,
-      activityType,
+      category,
       duration: 0,
-      language,
       project: projectPath,
     });
   }
 
   lastActivityTimestamp = now;
   Logger.info(
-    `Updated event: ${activityType} | File: ${entity} | Language: ${language} | Project: ${projectPath} | Duration: ${
+    `Updated event: ${category} | File: ${entity} | Language: ${language} | Project: ${projectPath} | Duration: ${
       activeEvents.get(entity)?.duration
     }s`,
   );
@@ -69,8 +67,7 @@ async function logSummarizedEvent(entity: string): Promise<void> {
     return;
   }
 
-  let { timestamp, activityType, duration, project } =
-    activeEvents.get(entity)!;
+  let { timestamp, category, duration, project } = activeEvents.get(entity)!;
   const endTimestamp = Math.floor(DateTime.now().toSeconds());
 
   await runCliCommand([
@@ -80,7 +77,7 @@ async function logSummarizedEvent(entity: string): Promise<void> {
     "-t",
     timestamp,
     "-c",
-    activityType,
+    category,
     "-a",
     APP_NAME,
     "-e",
@@ -96,7 +93,7 @@ async function logSummarizedEvent(entity: string): Promise<void> {
   ]);
 
   Logger.info(
-    `Logged summarized event: ${activityType} | File: ${entity} | Project: ${project} | Duration: ${duration}s`,
+    `Logged summarized event: ${category} | File: ${entity} | Project: ${project} | Duration: ${duration}s`,
   );
 
   activeEvents.delete(entity);
@@ -108,7 +105,18 @@ export async function logHeartbeat(
 ): Promise<void> {
   const projectPath =
     vscode.workspace.getWorkspaceFolder(document.uri)?.uri.fsPath || "unknown";
-  const entity = document.fileName;
+
+  let entityPath = document.uri.fsPath;
+  if (entityPath.endsWith(".git")) {
+    entityPath = entityPath.slice(0, -4);
+  }
+
+  if (!fs.existsSync(entityPath)) {
+    Logger.warn(`Skipping non-existent file: ${entityPath}`);
+    return;
+  }
+
+  const entity = entityPath;
   const cursorpos =
     vscode.window.activeTextEditor?.selection.active.character ?? 0;
   const timestamp = Math.floor(DateTime.now().toSeconds());
@@ -120,12 +128,10 @@ export async function logHeartbeat(
   lastLineCounts.set(entity, newLines);
 
   Logger.info(
-    `Logging ${
-      isWrite ? "write" : "edit"
-    } heartbeat for: ${entity} | Lines edited: ${linesEdited}`,
+    `Logging ${isWrite ? "write" : "edit"} heartbeat for: ${entity} | Lines edited: ${linesEdited}`,
   );
 
-  let args = [
+  const args = [
     "--app",
     APP_NAME,
     "heartbeat",

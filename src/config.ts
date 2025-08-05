@@ -35,5 +35,5 @@ export function getDatabasePath(context: vscode.ExtensionContext): string {
     fs.mkdirSync(storagePath, { recursive: true });
   }
 
-  return storagePath;
+  return path.join(storagePath, `skopio-${APP_NAME}-data.db`);
 }
