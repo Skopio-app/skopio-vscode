@@ -44,8 +44,8 @@ export class SkopioTracker {
     this.startHeartbeatLoop();
   }
 
-  public dispose() {
-    this.flushAllEvents();
+  public async dispose() {
+    await this.flushAllEvents();
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
     }
@@ -246,7 +246,7 @@ export class SkopioTracker {
       }),
 
       vscode.window.onDidChangeActiveTextEditor((editor) => {
-        this.flushAllEvents(); // end previous event
+        this.flushAllEvents();
         if (editor) {
           this.logActivity(Category.Coding, editor.document.uri);
         }

@@ -11,7 +11,7 @@ export async function activate(context: vscode.ExtensionContext) {
   Logger.debug("Skopio extension activated.");
 }
 
-export function deactivate() {
-  SkopioTracker.getInstance().dispose();
+export async function deactivate() {
+  await SkopioTracker.getInstance().dispose();
   Logger.debug("Skopio extension deactivated");
 }
