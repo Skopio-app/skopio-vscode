@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { runCliCommand } from "./cli";
 import { APP_NAME, MAX_RETRIES, SYNC_INTERVAL } from "./config";
 import { Logger } from "./logger";
@@ -5,7 +6,7 @@ import { Logger } from "./logger";
 let retryAttempts = 0;
 let syncInterval: NodeJS.Timeout | null = null;
 
-export function startAutoSync(context: any): void {
+export function startAutoSync(context: vscode.ExtensionContext): void {
   Logger.debug(`Attempting to sync... (Attempt ${retryAttempts + 1})`);
   syncInterval = setInterval(async () => {
     try {

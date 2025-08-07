@@ -57,6 +57,13 @@ export class SkopioTracker {
     return filePath.replace(/\.git$/, "");
   }
 
+  /**
+   * Records the current time as the user's last active moment,
+   * and resets the idle timeout timer.
+   *
+   * This prevents heartbeats or events from being logged if the user is inactive.
+   * A minimum update interval prevents it from resetting too frequently.
+   */
   private markActivity() {
     const now = Date.now();
     if (
@@ -92,6 +99,13 @@ export class SkopioTracker {
     }, MIN_HEARTBEAT_INTERVAL);
   }
 
+  /**
+   * Starts or updates a tracked event for a given document and activity category.
+   *
+   * - If an event is already active for this file and same category, it continue.
+   * - If the category differs or no event exists, flushes the old ane and starts a new event.
+   * - Updates the project path for the new event
+   */
   public async logActivity(category: Category, document: vscode.TextDocument) {
     const rawEntity = document.fileName;
     const entity = this.normalizeEntityPath(rawEntity);
@@ -187,7 +201,7 @@ export class SkopioTracker {
       return;
     }
 
-    const timestamp = Math.floor(DateTime.now().toSeconds());
+    const timestamp = Math.floor(DateTime.utc().toSeconds());
     const cursor =
       vscode.window.activeTextEditor?.selection.active.character ?? 0;
     const lines = document.lineCount;
@@ -218,17 +232,13 @@ export class SkopioTracker {
   private registerListeners() {
     const disposables = this.context.subscriptions;
 
-    const onActivity = (doc: vscode.TextDocument, category: Category) => {
-      this.logActivity(category, doc);
-    };
-
     disposables.push(
       vscode.workspace.onDidChangeTextDocument(({ document }) => {
-        onActivity(document, Category.Coding);
+        this.logActivity(Category.Coding, document);
       }),
 
       vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
-        onActivity(textEditor.document, Category.Coding);
+        this.logActivity(Category.Coding, textEditor.document);
       }),
 
       vscode.window.onDidChangeTextEditorVisibleRanges(() => {
@@ -244,21 +254,46 @@ export class SkopioTracker {
 
       vscode.workspace.onDidOpenTextDocument((document) => {
         if (["markdown", "plaintext"].includes(document.languageId)) {
-          onActivity(document, Category.WritingDocs);
+          this.logActivity(Category.WritingDocs, document);
         }
+      }),
+
+      vscode.workspace.onDidSaveTextDocument((document) => {
+        const lang = document.languageId;
+        const category =
+          lang === "markdown" || lang === "plaintext"
+            ? Category.WritingDocs
+            : Category.Coding;
+
+        this.logActivity(category, document);
       }),
 
       vscode.debug.onDidStartDebugSession(() => {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-          onActivity(editor.document, Category.Debugging);
+          this.logActivity(Category.Debugging, editor.document);
         }
+      }),
+
+      vscode.debug.onDidChangeActiveDebugSession((session) => {
+        if (!session) {
+          return;
+        }
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+          return;
+        }
+
+        const entity = this.normalizeEntityPath(editor.document.fileName);
+        this.flushEvent(entity);
+        this.logActivity(Category.Debugging, editor.document);
       }),
 
       vscode.debug.onDidTerminateDebugSession(() => {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-          onActivity(editor.document, Category.Debugging);
+          const entity = this.normalizeEntityPath(editor.document.fileName);
+          this.flushEvent(entity);
         }
       }),
 
@@ -270,9 +305,35 @@ export class SkopioTracker {
         }
 
         if (name.includes("build")) {
-          onActivity(editor.document, Category.Compiling);
+          this.logActivity(Category.Compiling, editor.document);
         } else if (name.includes("test")) {
-          onActivity(editor.document, Category.CodeReviewing);
+          this.logActivity(Category.CodeReviewing, editor.document);
+        }
+      }),
+
+      vscode.tasks.onDidEndTask(({ execution }) => {
+        const name = execution.task.name.toLowerCase();
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+          return;
+        }
+
+        const document = editor.document;
+        const entity = this.normalizeEntityPath(document.fileName);
+
+        if (name.includes("build")) {
+          this.logActivity(Category.Compiling, editor.document);
+          this.flushEvent(entity);
+        } else if (name.includes("test")) {
+          this.logActivity(Category.CodeReviewing, editor.document);
+          this.flushEvent(entity);
+        }
+      }),
+
+      vscode.debug.onDidChangeBreakpoints(() => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+          this.logActivity(Category.Debugging, editor.document);
         }
       }),
 

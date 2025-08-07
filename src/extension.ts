@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { initializeDatabase } from "./cli";
-import { startAutoSync } from "./syncManager";
+import { startAutoSync } from "./sync";
 import { Logger } from "./logger";
 import { SkopioTracker } from "./skopio";
 
