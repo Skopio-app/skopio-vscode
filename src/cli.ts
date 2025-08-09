@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/naming-convention
 import * as child_process from "child_process";
 import * as vscode from "vscode";
-import { CLI_COMMAND, getDatabasePath } from "./config";
+import { APP_NAME, CLI_COMMAND, getDatabasePath } from "./config";
 import { Logger } from "./logger";
 
 export async function runCliCommand(args: any[]): Promise<void> {
@@ -34,7 +34,7 @@ export async function initializeDatabase(
   Logger.info(`Initializing database at ${dbPath}`);
 
   try {
-    await runCliCommand(["--db", dbPath]);
+    await runCliCommand(["--db", dbPath, "--app", APP_NAME]);
   } catch (error) {
     Logger.error(`Failed to initialize database: ${error}`);
   }

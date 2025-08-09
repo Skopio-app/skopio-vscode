@@ -9,6 +9,24 @@ export const CLI_COMMAND = path.join(
   "CodeProjects/skopio/target/debug/cli",
 );
 export const SYNC_INTERVAL = 60000;
+export const MAX_RETRIES = 4;
+export const APP_NAME = "Code";
+export const MIN_HEARTBEAT_INTERVAL = 2 * 1000;
+
+export enum Category {
+  Coding = "Coding",
+  Debugging = "Debugging",
+  Compiling = "Compiling",
+  WritingDocs = "Writing Docs",
+  CodeReviewing = "Code Reviewing",
+  Testing = "Testing",
+}
+
+export enum EntityType {
+  File = "File",
+  App = "App",
+  Url = "Url",
+}
 
 export function getDatabasePath(context: vscode.ExtensionContext): string {
   const storagePath = context.globalStorageUri.fsPath;
@@ -17,5 +35,5 @@ export function getDatabasePath(context: vscode.ExtensionContext): string {
     fs.mkdirSync(storagePath, { recursive: true });
   }
 
-  return path.join(storagePath, "skopio-cli-data.db");
+  return path.join(storagePath, `skopio-${APP_NAME}-data.db`);
 }

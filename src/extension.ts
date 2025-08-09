@@ -1,22 +1,17 @@
 import * as vscode from "vscode";
-import { initializeDatabase, runCliCommand } from "./cli";
-import { registerEventListeners } from "./eventListener";
-import { startAutoSync } from "./syncManager";
+import { initializeDatabase } from "./cli";
+import { startAutoSync } from "./sync";
 import { Logger } from "./logger";
+import { SkopioTracker } from "./skopio";
 
 export async function activate(context: vscode.ExtensionContext) {
   await initializeDatabase(context);
-  registerEventListeners(context);
+  SkopioTracker.getInstance().initialize(context);
   startAutoSync(context);
-
-  let syncCommand = vscode.commands.registerCommand("skopio.sync", async () => {
-    await runCliCommand(["sync"]);
-  });
-
-  context.subscriptions.push(syncCommand);
   Logger.debug("Skopio extension activated.");
 }
 
-export function deactivate() {
-  Logger.info("Skopio extension deactivated");
+export async function deactivate() {
+  await SkopioTracker.getInstance().dispose();
+  Logger.debug("Skopio extension deactivated");
 }
