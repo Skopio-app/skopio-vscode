@@ -7,6 +7,7 @@ export enum LogLevel {
   ERROR = "ERROR",
 }
 
+// TODO: Set log level depending on environment
 export class Logger {
   private static logLevel: LogLevel = LogLevel.DEBUG;
 

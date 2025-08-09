@@ -7,7 +7,7 @@ import {
   MIN_HEARTBEAT_INTERVAL,
 } from "./config";
 import { runCliCommand } from "./cli";
-import { Logger } from "./logger";
+import { Logger, LogLevel } from "./logger";
 
 interface TrackedEvent {
   start: number; // ms
@@ -15,6 +15,7 @@ interface TrackedEvent {
   project: string;
 }
 
+// TODO: Add support for tracking in vscode web version
 export class SkopioTracker {
   private static instance: SkopioTracker;
 
