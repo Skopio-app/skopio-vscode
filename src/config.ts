@@ -28,12 +28,12 @@ export enum EntityType {
   Url = "Url",
 }
 
-export function getDatabasePath(context: vscode.ExtensionContext): string {
+export function getDBDirectoryPath(context: vscode.ExtensionContext): string {
   const storagePath = context.globalStorageUri.fsPath;
 
   if (!fs.existsSync(storagePath)) {
     fs.mkdirSync(storagePath, { recursive: true });
   }
 
-  return path.join(storagePath, `skopio-${APP_NAME}-data.db`);
+  return storagePath;
 }
