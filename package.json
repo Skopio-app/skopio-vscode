@@ -12,7 +12,6 @@
   ],
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:skopio.sync",
     "workspaceContains:**/*"
   ],
   "main": "./dist/extension.js",
@@ -38,6 +37,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.97.0",
+    "@types/yauzl": "^2.10.3",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
     "@vscode/test-cli": "^0.0.10",
@@ -47,8 +47,9 @@
     "npm-run-all": "^4.1.5",
     "typescript": "^5.7.3"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "packageManager": "yarn@4.9.2",
   "dependencies": {
-    "luxon": "^3.5.0"
+    "luxon": "^3.5.0",
+    "yauzl": "^3.2.0"
   }
 }
