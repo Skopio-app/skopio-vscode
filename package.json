@@ -1,7 +1,7 @@
 {
   "name": "skopio-vscode",
   "displayName": "Skopio",
-  "description": "Visual Studio extension for tracking programming activity",
+  "description": "Visual Studio Code extension for tracking programming activity",
   "publisher": "Skopio",
   "version": "0.0.1",
   "engines": {
@@ -16,9 +16,6 @@
     "workspaceContains:**/*"
   ],
   "main": "./dist/extension.js",
-  "contributes": {
-    "commands": []
-  },
   "icon": "images/skopio.png",
   "extensionKind": [
     "workspace"
