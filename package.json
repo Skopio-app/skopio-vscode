@@ -23,6 +23,11 @@
   "extensionKind": [
     "workspace"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Samuel-dot-cloud/skopio-vscode.git"
+  },
+  "license": "GPL-3.0-only",
   "scripts": {
     "vscode:prepublish": "yarn run package",
     "compile": "yarn run check-types && yarn run lint && node esbuild.js",
