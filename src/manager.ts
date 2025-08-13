@@ -55,7 +55,10 @@ export class CliManager {
   constructor(opts: CliManagerOpts) {
     this.ownerRepo = opts.ownerRepo;
     this.installDir = opts.installDir;
-    this.binPath = path.join(opts.installDir, opts.binName);
+    this.binPath = path.join(
+      opts.installDir,
+      `${opts.binName}-${this.archKey()}`,
+    );
     this.latestJsonUrl =
       opts.latestJsonUrl ??
       `https://github.com/${opts.ownerRepo}/releases/latest/download/latest.json`;

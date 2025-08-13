@@ -95,7 +95,7 @@ export class SkopioTracker {
       if (now - this.lastActivityAt < MIN_HEARTBEAT_INTERVAL) {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-          await this.logHeartbeat(editor.document);
+          await this.saveHeartbeat(editor.document);
         }
       }
     }, MIN_HEARTBEAT_INTERVAL);
@@ -108,7 +108,7 @@ export class SkopioTracker {
    * - If the category differs or no event exists, flushes the old ane and starts a new event.
    * - Updates the project path for the new event
    */
-  public async logActivity(category: Category, uri: vscode.Uri) {
+  public async saveEvent(category: Category, uri: vscode.Uri) {
     const entity = this.normalizeEntityPath(uri.fsPath);
     const project = vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath;
 
@@ -190,7 +190,7 @@ export class SkopioTracker {
     this.flushedEntities.delete(normalized);
   }
 
-  private async logHeartbeat(document: vscode.TextDocument) {
+  private async saveHeartbeat(document: vscode.TextDocument) {
     const rawEntity = document.uri.fsPath;
     const entity = this.normalizeEntityPath(rawEntity);
     const project = vscode.workspace.getWorkspaceFolder(document.uri)?.uri
@@ -235,11 +235,11 @@ export class SkopioTracker {
 
     disposables.push(
       vscode.workspace.onDidChangeTextDocument(({ document }) => {
-        this.logActivity(Category.Coding, document.uri);
+        this.saveEvent(Category.Coding, document.uri);
       }),
 
       vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
-        this.logActivity(Category.Coding, textEditor.document.uri);
+        this.saveEvent(Category.Coding, textEditor.document.uri);
       }),
 
       vscode.window.onDidChangeTextEditorVisibleRanges(() => {
@@ -249,13 +249,13 @@ export class SkopioTracker {
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         this.flushAllEvents();
         if (editor) {
-          this.logActivity(Category.Coding, editor.document.uri);
+          this.saveEvent(Category.Coding, editor.document.uri);
         }
       }),
 
       vscode.workspace.onDidOpenTextDocument((document) => {
         if (["markdown", "plaintext"].includes(document.languageId)) {
-          this.logActivity(Category.WritingDocs, document.uri);
+          this.saveEvent(Category.WritingDocs, document.uri);
         }
       }),
 
@@ -266,13 +266,13 @@ export class SkopioTracker {
             ? Category.WritingDocs
             : Category.Coding;
 
-        this.logActivity(category, document.uri);
+        this.saveEvent(category, document.uri);
       }),
 
       vscode.debug.onDidStartDebugSession(() => {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-          this.logActivity(Category.Debugging, editor.document.uri);
+          this.saveEvent(Category.Debugging, editor.document.uri);
         }
       }),
 
@@ -287,7 +287,7 @@ export class SkopioTracker {
 
         const entity = this.normalizeEntityPath(editor.document.fileName);
         this.flushEvent(entity);
-        this.logActivity(Category.Debugging, editor.document.uri);
+        this.saveEvent(Category.Debugging, editor.document.uri);
       }),
 
       vscode.debug.onDidTerminateDebugSession(() => {
@@ -306,9 +306,9 @@ export class SkopioTracker {
         }
 
         if (name.includes("build")) {
-          this.logActivity(Category.Compiling, editor.document.uri);
+          this.saveEvent(Category.Compiling, editor.document.uri);
         } else if (name.includes("test")) {
-          this.logActivity(Category.CodeReviewing, editor.document.uri);
+          this.saveEvent(Category.CodeReviewing, editor.document.uri);
         }
       }),
 
@@ -323,10 +323,10 @@ export class SkopioTracker {
         const entity = this.normalizeEntityPath(document.fileName);
 
         if (name.includes("build")) {
-          this.logActivity(Category.Compiling, editor.document.uri);
+          this.saveEvent(Category.Compiling, editor.document.uri);
           this.flushEvent(entity);
         } else if (name.includes("test")) {
-          this.logActivity(Category.CodeReviewing, editor.document.uri);
+          this.saveEvent(Category.CodeReviewing, editor.document.uri);
           this.flushEvent(entity);
         }
       }),
@@ -334,7 +334,7 @@ export class SkopioTracker {
       vscode.debug.onDidChangeBreakpoints(() => {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-          this.logActivity(Category.Debugging, editor.document.uri);
+          this.saveEvent(Category.Debugging, editor.document.uri);
         }
       }),
 
@@ -345,7 +345,7 @@ export class SkopioTracker {
       }),
 
       vscode.workspace.onDidOpenNotebookDocument((notebook) => {
-        this.logActivity(Category.Coding, notebook.uri);
+        this.saveEvent(Category.Coding, notebook.uri);
       }),
 
       vscode.workspace.onDidChangeNotebookDocument((event) => {
@@ -357,7 +357,7 @@ export class SkopioTracker {
         );
 
         if (didExecute) {
-          this.logActivity(Category.Compiling, uri);
+          this.saveEvent(Category.Compiling, uri);
           return;
         }
 
@@ -369,14 +369,14 @@ export class SkopioTracker {
         notebookEditTimers.set(
           path,
           setTimeout(() => {
-            this.logActivity(Category.Coding, uri);
+            this.saveEvent(Category.Coding, uri);
             notebookEditTimers.delete(path);
           }, this.NOTEBOOK_EDIT_DEBOUNCE_MS),
         );
       }),
 
       vscode.workspace.onDidSaveNotebookDocument((notebook) => {
-        this.logActivity(Category.Coding, notebook.uri);
+        this.saveEvent(Category.Coding, notebook.uri);
       }),
     );
   }
