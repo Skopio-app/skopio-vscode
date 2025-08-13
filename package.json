@@ -1,13 +1,14 @@
 {
   "name": "skopio-vscode",
   "displayName": "Skopio",
-  "description": "Visual Studio Plugin for tracking programming activity",
-  "publisher": "samuelwahome",
+  "description": "Visual Studio extension for tracking programming activity",
+  "publisher": "Skopio",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.97.0"
   },
   "categories": [
+    "Visualization",
     "Other"
   ],
   "activationEvents": [

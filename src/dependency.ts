@@ -23,7 +23,6 @@ export interface LatestAsset {
     certificate_url?: string;
     bundle_url?: string;
   };
-  checksums_url?: string;
 }
 
 export interface LatestJson {
@@ -176,9 +175,9 @@ export class CliManager {
     return (await res.json()) as LatestJson;
   }
 
-  private async existsExecutable(p: string): Promise<boolean> {
+  private async existsExecutable(path: string): Promise<boolean> {
     try {
-      await fs.promises.access(p, fs.constants.X_OK);
+      await fs.promises.access(path, fs.constants.X_OK);
       return true;
     } catch {
       return false;

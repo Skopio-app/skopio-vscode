@@ -7,7 +7,7 @@ import {
   GH_OWNER_REPO,
 } from "./config";
 import { Logger } from "./logger";
-import { CliManager } from "./manager";
+import { CliManager } from "./dependency";
 
 let _manager: CliManager | undefined;
 
