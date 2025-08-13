@@ -19,6 +19,10 @@
   "contributes": {
     "commands": []
   },
+  "icon": "images/skopio.png",
+  "extensionKind": [
+    "workspace"
+  ],
   "scripts": {
     "vscode:prepublish": "yarn run package",
     "compile": "yarn run check-types && yarn run lint && node esbuild.js",
