@@ -5,6 +5,7 @@ import {
   EntityType,
   APP_NAME,
   MIN_HEARTBEAT_INTERVAL,
+  SOURCE,
 } from "./config";
 import { runCliCommand } from "./cli";
 import { Logger, LogLevel } from "./logger";
@@ -179,6 +180,8 @@ export class SkopioTracker {
       EntityType.File,
       "-d",
       duration.toString(),
+      "-s",
+      SOURCE,
       "-p",
       event.project,
     ]);
@@ -222,6 +225,8 @@ export class SkopioTracker {
       EntityType.File,
       "-a",
       APP_NAME,
+      "-s",
+      SOURCE,
       "-l",
       lines.toString(),
       "-c",

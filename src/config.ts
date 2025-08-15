@@ -10,6 +10,7 @@ export const MIN_HEARTBEAT_INTERVAL = 2 * 1000;
 export const CLI_INSTALL_DIR = path.join(os.homedir(), ".skopio", "bin");
 export const CLI_BIN_NAME = "skopio-cli";
 export const GH_OWNER_REPO = "Samuel-dot-cloud/skopio";
+export const SOURCE = "skopio-vscode";
 
 export enum Category {
   Coding = "Coding",
