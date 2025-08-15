@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2] - 2025-08-15
+
+### Added
+
+- Add new `source` flag for saving the source of generated heartbeats/events.
+
+---
+
 ## [0.0.1] – 2025-08-13
 
 ### Added
