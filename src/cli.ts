@@ -24,7 +24,7 @@ export function getCliManager(): CliManager {
 
 export async function ensureCliOnFirstUse(): Promise<CliManager> {
   const mgr = getCliManager();
-  if (!(await mgr.exists())) {
+  if (await mgr.exists()) {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Window,
