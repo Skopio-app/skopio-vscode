@@ -1,4 +1,20 @@
+<!-- markdownlint-disable MD024 -->
+
 # Changelog
+
+## [0.0.3] - 2025-09-16
+
+### Fixed
+
+- Improve CLI update logic.
+- Set category to `Writing Docs` whenever a `markdown` or `plaintext` file is edited/focused.
+- Prevent capturing of duplicate events.
+
+### Removed
+
+- Redundant heartbeat logic.
+
+---
 
 ## [0.0.2] - 2025-08-15
 
