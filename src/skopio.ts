@@ -25,6 +25,7 @@ export class SkopioTracker {
   private readonly MIN_ACTIVITY_UPDATE_INTERVAL_MS = 2000; // 2s
   private readonly NOTEBOOK_EDIT_DEBOUNCE_MS = 3000;
   private lastActivityUpdateAt = 0;
+  private currentEntity: string | null = null;
 
   static getInstance(): SkopioTracker {
     if (!SkopioTracker.instance) {
@@ -96,23 +97,29 @@ export class SkopioTracker {
 
     this.markActivity();
 
-    const existing = this.events.get(entity);
     const now = Date.now();
+    const existing = this.events.get(entity);
+
+    const switchingFile =
+      this.currentEntity !== null && this.currentEntity !== entity;
+    const categoryChanged = existing && existing.category !== category;
+
+    if (switchingFile || categoryChanged) {
+      const others = Array.from(this.events.keys()).filter((e) => e !== entity);
+      await Promise.all(others.map((e) => this.flushEvent(e, { force: true })));
+    }
 
     if (!existing || existing.category !== category) {
-      if (existing) {
-        await this.flushEvent(entity);
-      }
       this.events.set(entity, {
         start: now,
         category,
         project,
       });
-    } else {
-      if (existing.project !== project) {
-        this.events.set(entity, { ...existing, project });
-      }
+    } else if (existing.project !== project) {
+      this.events.set(entity, { ...existing, project });
     }
+
+    this.currentEntity = entity;
   }
 
   public async flushAllEvents() {
@@ -216,6 +223,8 @@ export class SkopioTracker {
         this.flushAllEvents();
         if (editor) {
           this.saveEvent(Category.Coding, editor.document.uri);
+        } else {
+          this.currentEntity = null;
         }
       }),
 
@@ -305,9 +314,12 @@ export class SkopioTracker {
       }),
 
       vscode.workspace.onDidCloseTextDocument((document) => {
-        const entity = document.fileName;
+        const entity = this.normalizeEntityPath(document.fileName);
         Logger.debug(`Document closed: ${entity}`);
-        this.flushEvent(entity);
+        void this.flushEvent(entity, { force: true });
+        if (this.currentEntity === entity) {
+          this.currentEntity = null;
+        }
       }),
 
       vscode.workspace.onDidOpenNotebookDocument((notebook) => {
