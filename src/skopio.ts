@@ -1,14 +1,7 @@
 import * as vscode from "vscode";
-import { DateTime } from "luxon";
-import {
-  Category,
-  EntityType,
-  APP_NAME,
-  MIN_HEARTBEAT_INTERVAL,
-  SOURCE,
-} from "./config";
+import { Category, EntityType, APP_NAME, SOURCE } from "./config";
 import { runCliCommand } from "./cli";
-import { Logger, LogLevel } from "./logger";
+import { Logger } from "./logger";
 
 interface TrackedEvent {
   start: number; // ms
@@ -22,15 +15,15 @@ export class SkopioTracker {
 
   private events = new Map<string, TrackedEvent>();
   private flushedEntities = new Set<string>();
+  private flushing = new Set<string>();
+  private flushDebounce = new Map<string, NodeJS.Timeout>();
 
   private context!: vscode.ExtensionContext;
   private idleTimer: NodeJS.Timeout | null = null;
-  private heartbeatTimer: NodeJS.Timeout | null = null;
 
   private readonly IDLE_TIMEOUT = 60_000; // 1 minute
   private readonly MIN_ACTIVITY_UPDATE_INTERVAL_MS = 2000; // 2s
   private readonly NOTEBOOK_EDIT_DEBOUNCE_MS = 3000;
-  private lastActivityAt = Date.now();
   private lastActivityUpdateAt = 0;
 
   static getInstance(): SkopioTracker {
@@ -43,14 +36,10 @@ export class SkopioTracker {
   public initialize(context: vscode.ExtensionContext) {
     this.context = context;
     this.registerListeners();
-    this.startHeartbeatLoop();
   }
 
   public async dispose() {
     await this.flushAllEvents();
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-    }
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);
     }
@@ -75,7 +64,6 @@ export class SkopioTracker {
     ) {
       return;
     }
-    this.lastActivityAt = now;
     this.lastActivityUpdateAt = now;
     this.resetIdleTimer();
   }
@@ -88,18 +76,6 @@ export class SkopioTracker {
       Logger.debug("AFK timeout reached. Flushing events.");
       this.flushAllEvents();
     }, this.IDLE_TIMEOUT);
-  }
-
-  private startHeartbeatLoop() {
-    this.heartbeatTimer = setInterval(async () => {
-      const now = Date.now();
-      if (now - this.lastActivityAt < MIN_HEARTBEAT_INTERVAL) {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-          await this.saveHeartbeat(editor.document);
-        }
-      }
-    }, MIN_HEARTBEAT_INTERVAL);
   }
 
   /**
@@ -124,114 +100,99 @@ export class SkopioTracker {
     const now = Date.now();
 
     if (!existing || existing.category !== category) {
-      await this.flushEvent(entity);
+      if (existing) {
+        await this.flushEvent(entity);
+      }
       this.events.set(entity, {
         start: now,
         category,
         project,
       });
+    } else {
+      if (existing.project !== project) {
+        this.events.set(entity, { ...existing, project });
+      }
     }
   }
 
   public async flushAllEvents() {
-    for (const entity of Array.from(this.events.keys())) {
-      await this.flushEvent(entity);
-    }
+    await Promise.all(
+      Array.from(this.events.keys()).map((entity) =>
+        this.flushEvent(entity, { force: false }),
+      ),
+    );
   }
 
-  private async flushEvent(entity: string) {
+  private async flushEvent(entity: string, opts?: { force?: boolean }) {
     const normalized = this.normalizeEntityPath(entity);
-
-    if (this.flushedEntities.has(normalized)) {
-      Logger.debug(`Already flushing ${normalized}, skipping duplicate`);
-      return;
-    }
+    const force = Boolean(opts?.force);
 
     const event = this.events.get(normalized);
     if (!event) {
       return;
     }
 
-    const end = Date.now();
-    const duration = Math.floor((end - event.start) / 1000);
-
-    if (duration <= 0 || !event.project) {
-      this.events.delete(normalized);
-      return;
+    if (this.flushDebounce.has(normalized)) {
+      clearTimeout(this.flushDebounce.get(normalized)!);
+      this.flushDebounce.delete(normalized);
     }
 
-    this.flushedEntities.add(normalized);
+    const DEBOUNCE_MS = 150;
+    const schedule = async () => {
+      if (this.flushing.has(normalized)) {
+        return;
+      }
+      this.flushing.add(normalized);
 
-    await runCliCommand([
-      "--app",
-      APP_NAME,
-      "event",
-      "-t",
-      Math.floor(event.start / 1000),
-      "--end-timestamp",
-      Math.floor(end / 1000),
-      "-c",
-      event.category,
-      "-a",
-      APP_NAME,
-      "-e",
-      normalized,
-      "--entity-type",
-      EntityType.File,
-      "-d",
-      duration.toString(),
-      "-s",
-      SOURCE,
-      "-p",
-      event.project,
-    ]);
+      try {
+        const end = Date.now();
+        const duration = Math.floor((end - event.start) / 1000);
 
-    Logger.info(
-      `Flushed event for ${normalized} [${event.category}] (${duration}s)`,
-    );
-    this.events.delete(entity);
-    this.flushedEntities.delete(normalized);
-  }
+        if (!force && (duration <= 0 || !event.project)) {
+          this.events.delete(normalized);
+          return;
+        }
 
-  private async saveHeartbeat(document: vscode.TextDocument) {
-    const rawEntity = document.uri.fsPath;
-    const entity = this.normalizeEntityPath(rawEntity);
-    const project = vscode.workspace.getWorkspaceFolder(document.uri)?.uri
-      .fsPath;
+        await runCliCommand([
+          "event",
+          "-t",
+          Math.floor(event.start / 1000),
+          "--end-timestamp",
+          Math.floor(end / 1000),
+          "-c",
+          event.category,
+          "-a",
+          APP_NAME,
+          "-e",
+          normalized,
+          "--entity-type",
+          EntityType.File,
+          "-d",
+          duration.toString(),
+          "-s",
+          SOURCE,
+          "-p",
+          event.project,
+        ]);
 
-    if (!project) {
-      Logger.warn(`Skipping heartbeat: unknown project for ${rawEntity}`);
-      return;
+        Logger.info(
+          `Flushed event for ${normalized} [${event.category}] (${duration}s)`,
+        );
+        this.events.delete(normalized);
+      } catch (err) {
+        Logger.error(`Flush failed for ${normalized}: ${String(err)}`);
+      } finally {
+        this.flushing.delete(normalized);
+        this.flushedEntities.delete(normalized);
+      }
+    };
+
+    if (force) {
+      await schedule();
+    } else {
+      const t = setTimeout(schedule, DEBOUNCE_MS);
+      this.flushDebounce.set(normalized, t);
     }
-
-    const timestamp = Math.floor(DateTime.utc().toSeconds());
-    const cursor =
-      vscode.window.activeTextEditor?.selection.active.character ?? 0;
-    const lines = document.lineCount;
-
-    Logger.debug(`Logging heartbeat for ${entity}`);
-
-    await runCliCommand([
-      "--app",
-      APP_NAME,
-      "heartbeat",
-      "-p",
-      project,
-      "-t",
-      timestamp,
-      "-e",
-      entity,
-      "--entity-type",
-      EntityType.File,
-      "-a",
-      APP_NAME,
-      "-s",
-      SOURCE,
-      "-l",
-      lines.toString(),
-      "-c",
-      cursor.toString(),
-    ]);
   }
 
   private registerListeners() {

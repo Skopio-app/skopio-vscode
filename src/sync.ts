@@ -10,14 +10,14 @@ export function startAutoSync(context: vscode.ExtensionContext): void {
   Logger.debug(`Attempting to sync... (Attempt ${retryAttempts + 1})`);
   syncInterval = setInterval(async () => {
     try {
-      await runCliCommand(["--app", APP_NAME, "sync"]);
+      await runCliCommand(["sync"]);
       retryAttempts = 0;
     } catch (error) {
       Logger.error(`Failed to sync data: ${error}`);
       retryAttempts++;
       if (retryAttempts < MAX_RETRIES) {
         const delay = Math.pow(2, retryAttempts) * 1000;
-        setTimeout(() => runCliCommand(["--app", APP_NAME, "sync"]), delay);
+        setTimeout(() => runCliCommand(["sync"]), delay);
       } else {
         Logger.error("Max retries reached.");
       }
