@@ -50,6 +50,12 @@ export class SkopioTracker {
     return filePath.replace(/\.git$/, "");
   }
 
+  private setCategory(doc: vscode.TextDocument): Category {
+    return doc.languageId === "markdown" || doc.languageId === "plaintext"
+      ? Category.WritingDocs
+      : Category.Coding;
+  }
+
   /**
    * Records the current time as the user's last active moment,
    * and resets the idle timeout timer.
@@ -208,11 +214,14 @@ export class SkopioTracker {
 
     disposables.push(
       vscode.workspace.onDidChangeTextDocument(({ document }) => {
-        this.saveEvent(Category.Coding, document.uri);
+        this.saveEvent(this.setCategory(document), document.uri);
       }),
 
       vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
-        this.saveEvent(Category.Coding, textEditor.document.uri);
+        this.saveEvent(
+          this.setCategory(textEditor.document),
+          textEditor.document.uri,
+        );
       }),
 
       vscode.window.onDidChangeTextEditorVisibleRanges(() => {
@@ -222,26 +231,21 @@ export class SkopioTracker {
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         this.flushAllEvents();
         if (editor) {
-          this.saveEvent(Category.Coding, editor.document.uri);
+          this.saveEvent(
+            this.setCategory(editor.document),
+            editor.document.uri,
+          );
         } else {
           this.currentEntity = null;
         }
       }),
 
       vscode.workspace.onDidOpenTextDocument((document) => {
-        if (["markdown", "plaintext"].includes(document.languageId)) {
-          this.saveEvent(Category.WritingDocs, document.uri);
-        }
+        this.saveEvent(this.setCategory(document), document.uri);
       }),
 
       vscode.workspace.onDidSaveTextDocument((document) => {
-        const lang = document.languageId;
-        const category =
-          lang === "markdown" || lang === "plaintext"
-            ? Category.WritingDocs
-            : Category.Coding;
-
-        this.saveEvent(category, document.uri);
+        this.saveEvent(this.setCategory(document), document.uri);
       }),
 
       vscode.debug.onDidStartDebugSession(() => {
