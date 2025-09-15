@@ -22,9 +22,21 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Samuel-dot-cloud/skopio-vscode.git"
+    "url": "https://github.com/Skopio-app/skopio-vscode.git"
   },
-  "license": "GPL-3.0-only",
+  "license": "MIT",
+  "contributes": {
+    "configuration": {
+      "title": "Skopio",
+      "properties": {
+        "skopio.cli.devPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to a local Skopio CLI binary to use in development. When set, the extension will not download or update the CLI."
+        }
+      }
+    }
+  },
   "scripts": {
     "vscode:prepublish": "yarn run package",
     "compile": "yarn run check-types && yarn run lint && node esbuild.js",

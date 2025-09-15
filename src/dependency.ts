@@ -1,4 +1,3 @@
-// manager.ts
 import * as fs from "fs";
 import * as os from "os";
 import * as crypto from "crypto";
@@ -36,6 +35,7 @@ export interface CliManagerOpts {
   installDir: string;
   binName: string;
   latestJsonUrl?: string;
+  overridePath?: string;
 }
 
 export interface EnsureOpts {
@@ -49,22 +49,29 @@ export class CliManager {
   private readonly installDir: string;
   private readonly binPath: string;
   private readonly latestJsonUrl: string;
+  private readonly managed: boolean;
   private inFlight?: Promise<void>;
 
   constructor(opts: CliManagerOpts) {
     this.ownerRepo = opts.ownerRepo;
     this.installDir = opts.installDir;
-    this.binPath = path.join(
+
+    const defaultPath = path.join(
       opts.installDir,
       `${opts.binName}-${this.archKey()}`,
     );
+    this.binPath = opts.overridePath || defaultPath;
+    this.managed = !opts.overridePath;
     this.latestJsonUrl =
       opts.latestJsonUrl ??
-      `https://github.com/${opts.ownerRepo}/releases/latest/download/latest.json`;
+      `https://github.com/${opts.ownerRepo}/cli-releases/releases/latest/download/latest.json`;
   }
 
   get path() {
     return this.binPath;
+  }
+  get isManaged() {
+    return this.managed;
   }
 
   async exists(): Promise<boolean> {
@@ -72,6 +79,14 @@ export class CliManager {
   }
 
   async ensureUpToDate(opts: EnsureOpts = {}): Promise<void> {
+    if (!this.managed) {
+      if (!(await this.existsExecutable(this.binPath))) {
+        throw new Error(
+          `skopio-cli devPath not found or not executable: ${this.binPath}`,
+        );
+      }
+      return;
+    }
     const run = async () => {
       const start = Date.now();
       const withTimeout = <T>(p: Promise<T>) =>
